@@ -12,11 +12,12 @@ import Alamofire
 enum Router: URLRequestConvertible {
     static let libraryURLString = "http://coin.lib.scuec.edu.cn/reader/redr_verify.php"
     static let readerBookURLString = "http://coin.lib.scuec.edu.cn/reader/book_lst.php"
+    static let bookHistoryURLString = "http://coin.lib.scuec.edu.cn/reader/book_hist.php"
     static var OAuthToken: String?
     
     case LoginUser([String: AnyObject])
     case GetBookInfo
-    case UpdateUser(String, [String: AnyObject])
+    case GetBookHistory
     case DestroyUser(String)
     
     var method: Alamofire.Method {
@@ -25,8 +26,8 @@ enum Router: URLRequestConvertible {
             return .POST
         case .GetBookInfo:
             return .GET
-        case .UpdateUser:
-            return .PUT
+        case .GetBookHistory:
+            return .GET
         case .DestroyUser:
             return .DELETE
         }
@@ -38,8 +39,8 @@ enum Router: URLRequestConvertible {
             return Router.libraryURLString
         case .GetBookInfo:
             return Router.readerBookURLString
-        case .UpdateUser(let username, _):
-            return "/users/\(username)"
+        case .GetBookHistory:
+            return Router.bookHistoryURLString
         case .DestroyUser(let username):
             return "/users/\(username)"
         }
@@ -54,13 +55,16 @@ enum Router: URLRequestConvertible {
         let mutableURLRequest = NSMutableURLRequest(URL: URL)
         mutableURLRequest.HTTPMethod = method.rawValue
         
+        let defaults = NSUserDefaults.standardUserDefaults()
+        if let cookie_name = defaults.stringForKey("Cookie_name"){
+            if let cookie_value = defaults.stringForKey("Cookie_value"){
+            mutableURLRequest.setValue("\(cookie_name)=\(cookie_value)", forHTTPHeaderField: "Cookie")
         
-        mutableURLRequest.setValue("PHPSESSID=57eo0d8orfr1t5skrvim8em1b1", forHTTPHeaderField: "Cookie")
+            println(cookie_value)
+            }}
 
         switch self {
         case .LoginUser(let parameters):
-            return Alamofire.ParameterEncoding.URL.encode(mutableURLRequest, parameters: parameters).0
-        case .UpdateUser(_, let parameters):
             return Alamofire.ParameterEncoding.URL.encode(mutableURLRequest, parameters: parameters).0
         default:
             return mutableURLRequest
